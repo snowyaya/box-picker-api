@@ -236,7 +236,7 @@ curl -X POST http://127.0.0.1:8000/pack \
         "dimensions": { "length": 6, "width": 4, "height": 4 }
       }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected**: Single BX-S box (smallest box that fits a 6×4×4 item)
@@ -255,7 +255,7 @@ curl -X POST http://127.0.0.1:8000/pack \
       { "sku": "SKU-CAM-01", "dimensions": { "length": 6, "width": 4, "height": 4 } },
       { "sku": "SKU-LENS-02", "dimensions": { "length": 8, "width": 4, "height": 4 } }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected**: Single box containing both items
@@ -264,21 +264,21 @@ curl -X POST http://127.0.0.1:8000/pack \
 
 #### 3. Multiple Items Requiring Multiple Boxes
 
-Tests the multi-box packing algorithm.
+Tests the multi-box packing algorithm with items that cannot fit in a single box.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/pack \
   -H "Content-Type: application/json" \
   -d '{
     "items": [
-      { "sku": "SKU-TRIP-01", "dimensions": { "length": 18, "width": 4, "height": 4 } },
-      { "sku": "SKU-CAM-01", "dimensions": { "length": 6, "width": 4, "height": 4 } },
-      { "sku": "SKU-LENS-02", "dimensions": { "length": 8, "width": 4, "height": 4 } }
+      { "sku": "ITEM-1", "dimensions": { "length": 20, "width": 15, "height": 10 } },
+      { "sku": "ITEM-2", "dimensions": { "length": 20, "width": 15, "height": 10 } },
+      { "sku": "ITEM-3", "dimensions": { "length": 20, "width": 15, "height": 10 } }
     ]
-  }' | jq
+  }'
 ```
 
-**Expected**: Items split across multiple boxes (tripod in one, camera items in another)
+**Expected**: Items split across multiple boxes (these items are too large to fit together even in BX-XXL)
 
 ---
 
@@ -293,7 +293,7 @@ curl -X POST http://127.0.0.1:8000/pack \
     "items": [
       { "sku": "SKU-MIC-01", "dimensions": { "length": 10, "width": 3, "height": 3 } }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected**: Item packed successfully (rotated to fit if necessary)
@@ -309,7 +309,7 @@ Tests validation when required field is missing.
 ```bash
 curl -X POST http://127.0.0.1:8000/pack \
   -H "Content-Type: application/json" \
-  -d '{}' | jq
+  -d '{}'
 ```
 
 **Expected Response** (400):
@@ -337,7 +337,7 @@ curl -X POST http://127.0.0.1:8000/pack \
   -H "Content-Type: application/json" \
   -d '{
     "items": []
-  }' | jq
+  }'
 ```
 
 **Expected Response** (400):
@@ -364,7 +364,7 @@ curl -X POST http://127.0.0.1:8000/pack \
         "dimensions": { "length": -1, "width": 0, "height": 4 }
       }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected Response** (400):
@@ -395,7 +395,7 @@ curl -X POST http://127.0.0.1:8000/pack \
       { "sku": "DUPLICATE", "dimensions": { "length": 5, "width": 5, "height": 5 } },
       { "sku": "DUPLICATE", "dimensions": { "length": 6, "width": 6, "height": 6 } }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected Response** (400):
@@ -428,7 +428,7 @@ curl -X POST http://127.0.0.1:8000/pack \
         "dimensions": { "length": 100, "width": 100, "height": 100 }
       }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected Response** (422):
@@ -454,7 +454,7 @@ Tests handling of malformed JSON.
 ```bash
 curl -X POST http://127.0.0.1:8000/pack \
   -H "Content-Type: application/json" \
-  -d '{ invalid json }' | jq
+  -d '{ invalid json }'
 ```
 
 **Expected Response** (400):
@@ -474,7 +474,7 @@ Tests Content-Type validation.
 ```bash
 curl -X POST http://127.0.0.1:8000/pack \
   -H "Content-Type: text/plain" \
-  -d 'hello' | jq
+  -d 'hello'
 ```
 
 **Expected Response** (415):
@@ -498,7 +498,7 @@ curl -X POST http://127.0.0.1:8000/pack \
     "items": [
       { "sku": "", "dimensions": { "length": 5, "width": 5, "height": 5 } }
     ]
-  }' | jq
+  }'
 ```
 
 **Expected Response** (400):

@@ -21,7 +21,7 @@ def pack(request: HttpRequest):
     if "application/json" not in content_type:
         return error_response(
             "unsupported_media_type",
-            415, #unsupported_media_type
+            415,
             details="Use Content-Type: application/json",
         )
     
@@ -35,10 +35,23 @@ def pack(request: HttpRequest):
     try:
         req = PackRequest.model_validate(payload)
     except ValidationError as e:
+        # Convert Pydantic errors to JSON-serializable format
         errors = []
         for err in e.errors():
-            err.pop("url", None)
-            errors.append(err)
+            # Create a clean dict with only JSON-serializable values
+            clean_err = {
+                "type": err.get("type"),
+                "loc": list(err.get("loc", [])),
+                "msg": err.get("msg"),
+            }
+            # Only include input if it's serializable
+            if "input" in err:
+                try:
+                    json.dumps(err["input"])  # Test if serializable
+                    clean_err["input"] = err["input"]
+                except (TypeError, ValueError):
+                    pass  # Skip non-serializable input
+            errors.append(clean_err)
         return error_response("validation_error", 400, details=errors)
 
     # 3) Convert into internal Item objects and keep request order
@@ -53,7 +66,7 @@ def pack(request: HttpRequest):
         for idx, i in enumerate(req.items)
     ]
 
-    # 4) ✅ Pre-check: if any item can’t fit in the largest box (in any rotation), return 422
+    # 4) Pre-check: if any item can't fit in the largest box (in any rotation), return 422
     largest = _largest_box()
     too_large = [it for it in items if not _fits_in_box(it, largest)]
     if too_large:
@@ -97,8 +110,7 @@ def pack(request: HttpRequest):
     try:
         assignments = pack_into_boxes(items)
     except ValueError as e:
-        # This should now mostly be true validation/packing errors (not "too large")
-        return error_response("packing_error", 422, details=e.msg)
+        return error_response("packing_error", 422, details=str(e))
 
     resp_boxes = []
     for box, box_items in assignments:
@@ -150,6 +162,16 @@ def error_response(code: str, status: int, details=None, ctx=None):
 
 
 def _json_safe(x):
+    """Convert value to JSON-serializable format"""
     if isinstance(x, Exception):
         return str(x)
-    return x
+    if isinstance(x, dict):
+        return {k: _json_safe(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_json_safe(item) for item in x]
+    # Test if it's JSON serializable
+    try:
+        json.dumps(x)
+        return x
+    except (TypeError, ValueError):
+        return str(x)
