@@ -461,7 +461,7 @@ curl -X POST http://127.0.0.1:8000/pack \
 ```json
 {
   "error": "invalid_json",
-  "details": "Expecting property name enclosed in double quotes: line 1 column 3 (char 2)"
+  "details": "Expecting property name enclosed in double quotes"
 }
 ```
 
